@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title>HTML5 Canvas App</title>
+		<link rel="shortcut icon" href="assets/favicon.ico"/>
+		<!-- -->
+		<meta http-equiv="Content-Type" content="text/html; charset=utf8"/>
+		<meta name="apple-mobile-web-app-capable" content="yes"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+		<!-- css -->
+		<link href="build/enyo.css" rel="stylesheet"/>
+		<link href="build/app.css" rel="stylesheet"/>
+		<!-- js -->
+		<script src="build/enyo.js"></script>
+		<script src="build/app.js"></script>
+		<script type="text/javascript">
+
+
+// Junk test code
+var char,
+	scene,
+	yRot=300,
+	zRot=0,
+	xRot=0,
+	pRot=0,
+	pRot2=0,
+	cTransX=400,
+	buffSurface=[],
+	totalBuffSurfaces=10,
+	buffSurfaceIX=0,
+	framesDrawn=0,
+	startTime=0,
+	fpsOb=null,
+	sRot=0;
+	
+function init(){
+
+	var n,p;
+		
+	char=[];
+	scene=new Scene('screen',totalBuffSurfaces);
+	scene.setAmbient(0.3);
+	scene.addLight( -250,50,3, 1,0,0 );
+	scene.addLight( 250,50,3, 0,0,1 );
+	scene.addLight( 0,-20,50, 0,0.3,0 );
+	scene.setBGColor('#0000ff');
+	scene.setBGColor('rgba(0,0,0,0.1)');
+	scene.setZoom(10);
+
+	// Make a sphere...
+	var sPoints=[];
+	var sPolys=[]
+	var tPoints=0;
+	var size=8;
+	var segs=36;
+	
+	for(var n=0;n<=Math.round(segs/2);n++){
+		
+		var div=360/segs;
+		
+		var amp=(tbl.sin[n*div]);
+		
+		for(var i=0;i<segs;i++){
+	
+			var i2=(i*div);
+			var y=size*tbl.cos[n*div];
+			var x=size*amp*tbl.sin[i2];
+			var z=size*amp*tbl.cos[i2];
+			sPoints.push([x,y,z]);
+			if(n>0 && i>0 && (i+n)%2)
+				sPolys.push( [ [tPoints,tPoints-1,(tPoints-segs)-1,tPoints-segs] , 0.5,0.5,0.5, 1,1, true ]);
+			++tPoints;
+		}
+		if(n>0)
+			sPolys.push( [ [tPoints-segs,tPoints-1,(tPoints-segs)-1,(tPoints-segs)-segs] , 0.5,0.5,0.5, 1,1, true ]);
+	}
+
+	var sphere=new Object3D();
+	sphere.setPoints(sPoints);
+	sphere.setPolys(sPolys);
+	sphere.translate(0,0,100);
+	sphere.setZoom(30);
+	scene.addObject(sphere);
+	scene.setBGColor('#000000');
+	scene.cullBackFacing(false);
+
+	for(n=0;n<totalBuffSurfaces;n++){
+		scene.setBuffer(n);
+		sphere.translate(0,0,200);
+		sphere.rotate(0,n*2,0);
+		scene.render();
+	}
+	scene.removeObjects();	// Don't need the sphere ob any more now we have a render
+	scene.setBuffer(-1);	// resets the renderer to point to the output buffer
+	scene.setBGColor('rgba(0,0,0,0.1)');
+	scene.cullBackFacing(true);
+
+	// Set up chars
+	preprocessChars();
+	
+	setInterval(moveIt,1);
+	fpsOb=document.getElementById('fps');
+	startTime=new Date().getTime();
+}
+
+function moveIt(){
+	for(var n=0;n<char.length;n++){
+		char[n].translate(cTransX+(n*200),0,100);
+		char[n].rotate(xRot,yRot+(10*n),zRot+(20*n));
+	}
+	scene.cls();
+	scene.rotate(sRot);
+	sRot+=0.05;
+	scene.blitBuffer(buffSurfaceIX);
+	scene.render();
+
+	if(++buffSurfaceIX==totalBuffSurfaces)
+		buffSurfaceIX=0;
+
+	yRot+=0.5
+	if(yRot==360)
+		yRot=0;
+
+	zRot+=1.5;
+	if(zRot>359)
+		zRot=0;
+
+	xRot+=1;
+	if(xRot>359)
+		xRot=0;
+
+	cTransX-=5;
+	if(cTransX<-4100)
+		cTransX=400;
+	var elapsed=new Date().getTime()-startTime;
+	++framesDrawn;
+	fpsOb.innerHTML=Math.round(framesDrawn/(elapsed/1000))+"fps";
+}
+</script>
+
+
+	</head>
+	<body class="enyo-unselectable" onload="init()">
+		<canvas id="screen" width="800" height="600">This demo requires canvas support.</canvas>
+<div>
+	<h1><span id="fps">Waiting...</span>Canvas Performance Test:</h1>
+</body>
+
+	</body>
+</html>
